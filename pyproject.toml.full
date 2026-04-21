@@ -1,0 +1,118 @@
+# =============================================================================
+# pyproject.toml — single source of truth for project config + tool settings
+# =============================================================================
+
+# --- MANDATORY: every project needs this section ---
+[project]
+name = "demo-project"                            # ← replaced by uvinit
+version = "0.1.0"
+description = "CHANGEME: one-line project description"  # ← update after uvinit
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [
+    {name = "CHANGEME", email = "CHANGEME@example.com"},  # ← update after uvinit
+]
+# Runtime dependencies — available to your code via `import`
+dependencies = [
+    "tqdm>=4.67.1",
+]
+
+# --- OPTIONAL: dependency groups for dev tools and libraries ----------------
+# Install with: uv sync --group <name>
+# Install all:  uv sync --group libs --group test
+#
+# NOTE: ruff, pylint, and yapf are installed globally via `uv tool install`
+# (see README.md). Only tools that need access to project dependencies
+# (mypy, pytest) belong in dependency groups.
+[dependency-groups]
+libs = [
+    "icecream>=2.1.4",
+    "rich>=13.9.4",
+    "click>=8.1.8",
+    "textual>=1.0.0",
+]
+test = [
+    "pytest>=8.3.5",
+    "pytest-mock>=3.14.0",
+    "mypy>=1.13.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project.scripts]
+demo-cli = "demo_project.cli_argparse:main"      # ← replaced by uvinit
+demo-click = "demo_project.cli_click:main"        # ← replaced by uvinit
+
+# =============================================================================
+# Tool Configurations (everything except pylintrc, which stays in its own file)
+# =============================================================================
+
+# --- ruff: fast Python linter and formatter ---------------------------------
+[tool.ruff]
+target-version = "py310"
+line-length = 99
+indent-width = 4
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "F",   # pyflakes
+    "B",   # flake8-bugbear
+    "I",   # isort
+    "N",   # pep8-naming
+    "UP",  # pyupgrade
+    "ANN", # flake8-annotations
+    "S",   # flake8-bandit (security)
+    "BLE", # flake8-blind-except
+    "A",   # flake8-builtins
+    "C4",  # flake8-comprehensions
+    "ICN", # flake8-import-conventions
+    "PIE", # flake8-pie
+    "PT",  # flake8-pytest-style
+    "RET", # flake8-return
+    "SIM", # flake8-simplify
+    "ARG", # flake8-unused-arguments
+]
+ignore = []
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S101", "ANN201", "ANN001"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["demo_project"]  # ← replaced by uvinit
+
+# --- mypy: static type checker ----------------------------------------------
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = false
+no_implicit_optional = true
+strict_optional = true
+
+[[tool.mypy.overrides]]
+module = ["pytest.*", "tqdm.*"]
+ignore_missing_imports = true
+
+# --- pytest: testing framework -----------------------------------------------
+[tool.pytest.ini_options]
+cache_dir = "/tmp/pytest-cache"
+testpaths = ["tests"]
+
+# --- yapf: Python code formatter (Google style) ------------------------------
+[tool.yapf]
+based_on_style = "google"
+column_limit = 99
+indent_width = 4
+dedent_closing_brackets = true
+split_before_logical_operator = true
+coalesce_brackets = true
+allow_split_before_dict_value = false
+split_complex_comprehension = true
+split_penalty_after_opening_bracket = 0

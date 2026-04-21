@@ -1,4 +1,8 @@
-# src/demo_project/__init__.py
+"""Demo project package — a template for uv-managed Python projects."""
 
-# You can define package-level variables here, e.g.:
-__version__ = "0.1.0" # This often matches your pyproject.toml version
+from __future__ import annotations
+
+__all__ = ["say_hello", "calculate_sum", "__version__"]
+__version__ = "0.1.0"
+
+from demo_project.core import calculate_sum, say_hello

@@ -1,137 +1,261 @@
 # uv-base
 
-uv provides essential features for Python development — from installing Python and hacking on simple
-scripts to working on large projects that support multiple Python versions and platforms.
+A template for bootstrapping Python projects with [uv](https://docs.astral.sh/uv/).
 
-uv's interface can be broken down into sections, which are usable independently or together.
+---
 
-## Python versions
+## Quick Setup
 
-Installing and managing Python itself.
+### 1. One-time setup: Install global tools
 
-- `uv python install`: Install Python versions.
-- `uv python list`: View available Python versions.
-- `uv python find`: Find an installed Python version.
-- `uv python pin`: Pin the current project to use a specific Python version.
-- `uv python uninstall`: Uninstall a Python version.
-
-See the [guide on installing Python](../guides/install-python.md) to get started.
-
-## Scripts
-
-Executing standalone Python scripts, e.g., `example.py`.
-
-- `uv run`: Run a script.
-- `uv add --script`: Add a dependency to a script
-- `uv remove --script`: Remove a dependency from a script
-
-See the [guide on running scripts](../guides/scripts.md) to get started.
-
-## Projects
-
-Creating and working on Python projects, i.e., with a `pyproject.toml`.
-
-- `uv init`: Create a new Python project.
-- `uv add`: Add a dependency to the project.
-- `uv remove`: Remove a dependency from the project.
-- `uv sync`: Sync the project's dependencies with the environment.
-- `uv lock`: Create a lockfile for the project's dependencies.
-- `uv run`: Run a command in the project environment.
-- `uv tree`: View the dependency tree for the project.
-- `uv build`: Build the project into distribution archives.
-- `uv publish`: Publish the project to a package index.
-
-See the [guide on projects](../guides/projects.md) to get started.
-
-## Tools
-
-Running and installing tools published to Python package indexes, e.g., `ruff` or `black`.
-
-- `uvx` / `uv tool run`: Run a tool in a temporary environment.
-- `uv tool install`: Install a tool user-wide.
-- `uv tool uninstall`: Uninstall a tool.
-- `uv tool list`: List installed tools.
-- `uv tool update-shell`: Update the shell to include tool executables.
-
-See the [guide on tools](../guides/tools.md) to get started.
-
-## The pip interface
-
-Manually managing environments and packages — intended to be used in legacy workflows or cases where
-the high-level commands do not provide enough control.
-
-Creating virtual environments (replacing `venv` and `virtualenv`):
-
-- `uv venv`: Create a new virtual environment.
-
-See the documentation on [using environments](../pip/environments.md) for details.
-
-Managing packages in an environment (replacing [`pip`](https://github.com/pypa/pip) and
-[`pipdeptree`](https://github.com/tox-dev/pipdeptree)):
-
-- `uv pip install`: Install packages into the current environment.
-- `uv pip show`: Show details about an installed package.
-- `uv pip freeze`: List installed packages and their versions.
-- `uv pip check`: Check that the current environment has compatible packages.
-- `uv pip list`: List installed packages.
-- `uv pip uninstall`: Uninstall packages.
-- `uv pip tree`: View the dependency tree for the environment.
-
-See the documentation on [managing packages](../pip/packages.md) for details.
-
-Locking packages in an environment (replacing [`pip-tools`](https://github.com/jazzband/pip-tools)):
-
-- `uv pip compile`: Compile requirements into a lockfile.
-- `uv pip sync`: Sync an environment with a lockfile.
-
-See the documentation on [locking environments](../pip/compile.md) for details.
-
-!!! important
-
-    These commands do not exactly implement the interfaces and behavior of the tools they are based on. The further you stray from common workflows, the more likely you are to encounter differences. Consult the [pip-compatibility guide](../pip/compatibility.md) for details.
-
-## Utility
-
-Managing and inspecting uv's state, such as the cache, storage directories, or performing a
-self-update:
-
-- `uv cache clean`: Remove cache entries.
-- `uv cache prune`: Remove outdated cache entries.
-- `uv cache dir`: Show the uv cache directory path.
-- `uv tool dir`: Show the uv tool directory path.
-- `uv python dir`: Show the uv installed Python versions path.
-- `uv self update`: Update uv to the latest version.
-
-
-## Install uv
-
-
-1. `curl -LsSf https://astral.sh/uv/install.sh | sh`: Install uv
-2. `uv sync`: Sync the project's dependencies with the environment.
-3. `source .venv/bin/activate`: Activate the virtual environment.
-
-## Examples
+These linting/formatting tools are installed once and available across all projects. Each
+gets its own isolated environment under `~/.local/share/uv/tools/` — they never pollute
+your system Python or project venvs.
 
 ```shell
-uv python list
-uv python --version
-uv run --with requests sample.py
-uv add --script sample.py 'requests'
-uv add flask
-uv python pin 3.12.5
-uv init --python 3.13 my-project
-uv pip freeze
-uv sync
-uv tree
-uv lock --upgrade <package-name>
-uv self update
+uv tool install ruff
+uv tool install pylint
+uv tool install yapf
+```
+
+They still read `pyproject.toml` and `pylintrc` from whichever directory you run them in,
+so per-project config works automatically.
+
+**Why not mypy and pytest?** These tools need access to your project's installed
+dependencies to resolve imports and run tests. They belong in the project's dependency
+groups instead (see [Dependency Groups](#dependency-groups)).
+
+### 2. Add shell functions to `~/.zshrc` from `uvlint.sh` and `uvinit.sh`, then reload your shell
 
 
-# Steps to create a new project
-uv python pin 3.13
-uv init project-name
-rm main.py README.md
-uv add fastapi
-uv add icecream --dev
+### 3. Create a new project
+
+```shell
+mkdir my-project && cd my-project
+
+uvinit            # Simple: main.py + pyproject.toml + pylintrc
+uvinit --full     # Full:   src/my_project/ package + tests/ + config
+```
+
+After either command, activate the virtualenv:
+
+```shell
+source .venv/bin/activate
+```
+
+### 4. Update CHANGEME fields
+
+The generated `pyproject.toml` has placeholder values marked with `CHANGEME` that you
+should update immediately:
+
+| Field         | Location          | What to change                   |
+|---------------|-------------------|----------------------------------|
+| `description` | `[project]`       | One-line summary of your project |
+| `authors`     | `[project]`       | Your name and email              |
+
+The `name` and `known-first-party` fields are automatically set by `uvinit` based on the
+directory name. In `--full` mode, `[project.scripts]` entry points are also set.
+
+`uvinit` uses two separate templates (`pyproject.toml.full` and `pyproject.toml.simple`)
+so the simple variant never includes `[build-system]` or `[project.scripts]`.
+
+### 5. Changing Python version
+
+The template defaults to Python 3.10. To use a different version, update these three places
+in `pyproject.toml` and then re-sync:
+
+1. `requires-python = ">=3.10"` — in `[project]`
+2. `target-version = "py310"` — in `[tool.ruff]`
+3. `python_version = "3.10"` — in `[tool.mypy]`
+
+Then run:
+
+```shell
+uv python pin 3.13    # or whatever version you want
 uv sync
+```
+
+---
+
+## Project Structure
+
+After `uvinit`, you always get:
+
+```
+my-project/
+├── pyproject.toml            # Project config + all tool settings
+├── pylintrc                  # Pylint config (Google style, kept separate due to size)
+├── README.md                 # Auto-generated with project name
+├── main.py                   # Entry point (simple mode only)
+└── samples/
+    ├── README.md             # Overview of all sample scripts
+    ├── lint_sample.py        # Intentionally broken file for tool validation
+    ├── demo_icecream.py      # icecream debugging demo
+    ├── demo_rich.py          # rich terminal output demo
+    ├── demo_textual.py       # textual TUI demo
+    ├── demo_click.py         # click CLI demo
+    └── demo_tqdm.py          # tqdm progress bar demo
+```
+
+After `uvinit --full`, you get the above plus:
+
+```
+my-project/
+├── ...                       # (same base files, minus main.py)
+├── src/
+│   └── my_project/
+│       ├── __init__.py       # Package root — __all__, __version__
+│       ├── __main__.py       # Enables: python -m my_project
+│       ├── py.typed          # PEP 561 marker for type hint consumers
+│       ├── core.py           # Core business logic
+│       ├── cli_argparse.py   # CLI using argparse (stdlib, no extra deps)
+│       └── cli_click.py      # CLI using click (delete whichever you don't need)
+├── tests/
+│   ├── __init__.py
+│   └── test_core.py
+└── scripts/
+    └── example.py            # Standalone script (tqdm demo)
+```
+
+> **Tip:** Delete `cli_click.py` or `cli_argparse.py` depending on which CLI framework
+> you prefer for your project. Update the `[project.scripts]` entry point in
+> `pyproject.toml` accordingly.
+
+---
+
+## Dependency Groups
+
+```shell
+uv sync                                        # runtime deps only (tqdm)
+uv sync --group libs                           # + icecream, rich, click, textual
+uv sync --group test                           # + pytest, pytest-mock, mypy
+uv sync --group libs --group test              # everything
+```
+
+| Group  | Packages                           | Purpose                        |
+|--------|------------------------------------|--------------------------------|
+| `libs` | icecream, rich, click, textual     | Libraries you import in code   |
+| `test` | pytest, pytest-mock, mypy          | Testing + type checking        |
+
+Linting/formatting tools (ruff, pylint, yapf) are installed globally via
+`uv tool install` and are available in every project without adding them as dependencies.
+
+---
+
+## Tool Usage
+
+All commands below assume your venv is activated (`source .venv/bin/activate`) and global
+tools are installed (see [One-time setup](#1-one-time-setup-install-global-tools)).
+
+### Recommended workflow
+
+Run everything in order with a single command:
+
+```shell
+uvlint                    # defaults to src/
+uvlint scripts/           # specific directory
+uvlint file.py            # single file
+```
+
+The order is: **format** (yapf) -> **lint + auto-fix** (ruff) -> **deep lint** (pylint) ->
+**type check** (mypy). Format first so linters don't flag style issues, fast lint next
+to clean up trivials, deep lint for design feedback, type check last since it's slowest.
+
+### Or run tools individually
+
+#### yapf — Code formatter (Google style)
+
+```shell
+yapf --diff file.py              # preview formatting changes
+yapf -i file.py                  # format in-place
+yapf -i -r src/                  # format entire directory
+```
+
+#### ruff — Fast linter and formatter
+
+```shell
+ruff check file.py               # lint a single file
+ruff check --fix .               # lint + auto-fix everything
+ruff format .                    # format all files (black-compatible style)
+ruff format --check .            # check formatting without changing
+```
+
+> **Note:** `ruff format` and `yapf` are both formatters with different styles. Pick one
+> per project. This template uses yapf (Google style) by default.
+
+#### pylint — Comprehensive linter
+
+```shell
+pylint file.py                   # lint a single file
+pylint src/my_package/           # lint the whole package
+```
+
+#### mypy — Static type checker
+
+```shell
+mypy file.py                     # check a single file
+mypy src/                        # check the whole package
+```
+
+#### pytest — Testing framework
+
+```shell
+pytest                           # run all tests
+pytest -v                        # verbose output
+pytest tests/test_core.py        # specific file
+pytest -k "test_say_hello"       # filter by name
+```
+
+### Validating tools with the sample file
+
+The `samples/lint_sample.py` file (copied to every new project by `uvinit`) contains
+intentional issues. Use it to confirm each tool is working:
+
+```shell
+ruff check samples/lint_sample.py       # unused imports, naming, old typing
+mypy samples/lint_sample.py             # type errors, missing annotations
+pylint samples/lint_sample.py           # docstrings, too many args, unused imports
+yapf --diff samples/lint_sample.py      # formatting: spacing, line length
+```
+
+See `samples/README.md` for runnable demos of every library in the `libs` group.
+
+---
+
+## Quick Reference
+
+```shell
+# --- Project setup ---
+uvinit                             # simple project (main.py)
+uvinit --full                      # full package (src/ layout)
+source .venv/bin/activate          # activate the virtualenv
+uvlint                             # format + lint + type-check src/
+uvlint file.py                     # same, on a single file
+
+# --- Dependency management ---
+uv sync                            # install/update dependencies
+uv sync --group libs --group test  # install all groups
+uv add <package>                   # add a runtime dependency
+uv add --group test <package>      # add to a specific group
+uv remove <package>                # remove a dependency
+uv lock --upgrade                  # upgrade all locked versions
+uv tree                            # show dependency tree
+
+# --- Global tool management ---
+uv tool install <tool>             # install a tool globally
+uv tool list                       # see installed tools
+uv tool upgrade --all              # upgrade all global tools
+uv tool upgrade <tool>             # upgrade a specific tool
+uv tool uninstall <tool>           # remove a tool
+uv tool update-shell               # ensure ~/.local/bin is on PATH
+
+# --- Running code ---
+python script.py                   # run a script (venv activated)
+python -m my_package               # run package as module
+demo-cli greet                     # run a CLI entry point
+
+# --- Python versions ---
+uv python list                     # available versions
+uv python pin 3.13                 # pin project to a version
+uv python install 3.12             # install a specific version
 ```
